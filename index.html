@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>X TKJ K, SMK Talenta Bangsa</title>
+<meta name="description" content="Data kelas X TKJ K SMK Talenta Bangsa: daftar siswa, jadwal pelajaran, jadwal piket, struktur organisasi, dan galeri kegiatan.">
+<meta name="theme-color" content="#0B0F14">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#konten">Langsung ke isi utama</a>
+
+<header class="nav" id="atas">
+  <div class="nav__inner shell">
+    <a class="brand" href="#beranda">
+      <span class="brand__class">X TKJ K</span>
+      <span class="brand__school">SMK Talenta Bangsa</span>
+    </a>
+
+    <button class="nav__toggle" type="button" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">
+      Menu
+    </button>
+
+    <nav class="nav__nav" id="nav-links" aria-label="Bagian halaman">
+      <ul class="nav__list">
+        <li><a href="#beranda">Beranda</a></li>
+        <li><a href="#siswa">Siswa</a></li>
+        <li><a href="#jadwal">Jadwal</a></li>
+        <li><a href="#struktur">Struktur</a></li>
+        <li><a href="#galeri">Galeri</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="konten">
+
+  <section class="hero" id="beranda" aria-labelledby="beranda-judul">
+    <span class="hero__mark" aria-hidden="true">X TKJ K</span>
+    <div class="hero__inner shell">
+      <div class="hero__intro">
+        <p class="kicker">SMK Talenta Bangsa</p>
+        <h1 class="hero__title" id="beranda-judul">Kelas X TKJ K</h1>
+        <p class="hero__lead">
+          Jurusan Teknik Komputer dan Jaringan. Di sini tempatnya kami merakit perangkat, 
+          membangun jaringan, dan mencari tahu alasan kenapa satu kabel kadang susah nyambung.
+        </p>
+
+        <article class="greet">
+          <h2 class="greet__title">Halo, selamat datang di halaman kelas kami!</h2>
+          <p>
+            Halaman ini merangkum berbagai informasi penting seputar kelas X TKJ K—mulai dari daftar anggota, 
+            jadwal belajar, pembagian tugas piket, hingga struktur kepengurusan kelas.
+          </p>
+        </article>
+      </div>
+
+      <aside class="today" aria-labelledby="today-judul" id="today-panel">
+        <h2 class="today__title" id="today-judul">Hari Ini</h2>
+        <p class="today__date" id="today-date">Memuat tanggal...</p>
+        <dl class="today__list" id="today-list"></dl>
+        <p class="today__note" id="today-note" hidden></p>
+
+        <div class="tabs tabs--tight" role="tablist" aria-label="Isi hari ini">
+          <button class="tab" type="button" role="tab" id="tab-ini-pelajaran" aria-controls="panel-ini-pelajaran" aria-selected="true">Pelajaran Hari Ini</button>
+          <button class="tab" type="button" role="tab" id="tab-ini-seragam" aria-controls="panel-ini-seragam" aria-selected="false" tabindex="-1">Seragam Hari Ini</button>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="panel-ini-pelajaran" aria-labelledby="tab-ini-pelajaran" tabindex="0">
+          <div class="readout" id="today-lessons">
+            <div class="state state--loading" role="status">
+              <p class="state__text">Memuat jadwal hari ini...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="panel-ini-seragam" aria-labelledby="tab-ini-seragam" tabindex="0" hidden>
+          <figure class="uniform" id="today-uniform">
+            <div class="state state--loading" role="status">
+              <p class="state__text">Memuat informasi seragam...</p>
+            </div>
+          </figure>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section" id="siswa" aria-labelledby="siswa-judul">
+    <div class="shell">
+      <h2 class="section__title" id="siswa-judul">Daftar Anggota Kelas</h2>
+      <p class="section__lead">
+        Daftar nama disusun berdasarkan nomor absen. Jika foto profil belum tersedia, 
+        inisial nama akan otomatis ditampilkan sebagai pengganti.
+      </p>
+
+      <div class="toolbar">
+        <div class="field">
+          <label class="field__label" for="cari-siswa">Cari nama siswa</label>
+          <input class="field__input" type="search" id="cari-siswa" placeholder="Ketik nama, contoh: Adelia" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="btn" type="button" id="salin-daftar">Salin daftar yang tampil</button>
+        <p class="toolbar__count" id="siswa-count" aria-live="polite">Memuat daftar siswa...</p>
+      </div>
+
+      <p class="toast" id="toast" role="status" hidden></p>
+
+      <div class="students" id="students-grid">
+        <div class="state state--loading" role="status">
+          <p class="state__text">Memuat daftar siswa...</p>
+          <div class="skeleton" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--edge" id="jadwal" aria-labelledby="jadwal-judul">
+    <div class="shell">
+      <h2 class="section__title" id="jadwal-judul">Jadwal Pelajaran &amp; Piket</h2>
+      <p class="section__lead">
+        Hari yang sedang berjalan akan ditandai secara khusus supaya lebih mudah dilihat pada setiap kegiatan belajar.
+      </p>
+
+      <div class="tabs" role="tablist" aria-label="Jenis jadwal">
+        <button class="tab" type="button" role="tab" id="tab-pelajaran" aria-controls="panel-pelajaran" aria-selected="true">Jadwal Pelajaran</button>
+        <button class="tab" type="button" role="tab" id="tab-piket" aria-controls="panel-piket" aria-selected="false" tabindex="-1">Jadwal Piket</button>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="panel-pelajaran" aria-labelledby="tab-pelajaran" tabindex="0">
+        <div class="days" id="lesson-days">
+          <div class="state state--loading" role="status">
+            <p class="state__text">Memuat jadwal pelajaran...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="panel-piket" aria-labelledby="tab-piket" tabindex="0" hidden>
+        <div class="days" id="duty-days">
+          <div class="state state--loading" role="status">
+            <p class="state__text">Memuat jadwal piket...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="struktur" aria-labelledby="struktur-judul">
+    <div class="shell">
+      <h2 class="section__title" id="struktur-judul">Struktur Organisasi Kelas</h2>
+      <p class="section__lead">
+        Susunan kepengurusan kelas mulai dari wali kelas, ketua, sekretaris, bendahara, hingga seksi-seksi bidang.
+      </p>
+      <div id="org-tree">
+        <div class="state state--loading" role="status">
+          <p class="state__text">Memuat struktur organisasi...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--edge" id="galeri" aria-labelledby="galeri-judul">
+    <div class="shell">
+      <h2 class="section__title" id="galeri-judul">Galeri Kegiatan</h2>
+      <p class="section__lead">Dokumentasi momen seru dan berbagai kegiatan kelas X TKJ K.</p>
+      <div id="gallery-grid">
+        <div class="state state--loading" role="status">
+          <p class="state__text">Memuat galeri...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="shell foot__inner">
+    <div class="foot__about">
+      <p class="foot__title">Kelas X TKJ K, SMK Talenta Bangsa</p>
+      <p>
+        Seluruh informasi dan data pada halaman ini dikelola secara dinamis agar mudah diperbarui sewaktu-waktu.
+      </p>
+    </div>
+    <div class="foot__files">
+      <p class="foot__title">Menu Pintasan</p>
+      <ul>
+        <li><a href="#beranda">Kembali ke Beranda</a></li>
+        <li><a href="#siswa">Daftar Siswa</a></li>
+        <li><a href="#jadwal">Jadwal Belajar</a></li>
+        <li><a href="#struktur">Struktur Kelas</a></li>
+        <li><a href="#galeri">Galeri Kegiatan</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<dialog class="lightbox" id="lightbox" aria-labelledby="lightbox-caption">
+  <button class="lightbox__close" type="button" id="lightbox-close">Tutup Foto</button>
+  <img id="lightbox-img" src="" alt="">
+  <p class="lightbox__caption" id="lightbox-caption"></p>
+</dialog>
+
+<noscript>
+  <div class="shell">
+    <p class="state state--error">
+      Halaman ini membutuhkan JavaScript agar dapat berjalan dengan baik. Silakan aktifkan JavaScript di peramban Anda.
+    </p>
+  </div>
+</noscript>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

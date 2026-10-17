@@ -183,13 +183,6 @@ code {
   color: var(--muted);
   margin-bottom: 0.6rem;
 }
-/* The file that feeds each section. Monospace because it is a path, not a heading. */
-.kicker--mono {
-  font-family: var(--font-mono);
-  text-transform: none;
-  letter-spacing: 0.01em;
-  color: var(--accent);
-}
 
 .section__lead,
 .hero__lead {
@@ -435,9 +428,15 @@ code {
 .card__role {
   margin-top: 0.2rem;
   font-size: 0.78rem;
+  color: var(--muted);
+}
+/* Green marks a live state (on duty today), the same job the accent does elsewhere. */
+.card__duty {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--accent);
 }
-.card__role--empty { color: var(--muted); }
 
 .avatar {
   flex: none;
@@ -722,7 +721,7 @@ code {
 .lightbox img { max-height: 70vh; width: auto; margin-inline: auto; border-radius: var(--radius); }
 .lightbox__caption { margin-top: 0.75rem; color: var(--muted); }
 
-/* Footer: two groups, because that is all this page links to. */
+/* Footer: the class identity on one side, its outbound links and a way back up on the other. */
 .foot {
   border-top: 1px solid var(--hairline);
   background: var(--panel);
@@ -732,14 +731,38 @@ code {
 }
 .foot__inner { display: grid; gap: 1.75rem; }
 .foot__title { color: var(--text); font-weight: 650; margin-bottom: 0.35rem; }
-.foot__files ul { display: grid; gap: 0.15rem; }
-.foot__files a {
-  color: var(--muted);
+.foot__list { display: grid; gap: 0.3rem; }
+.foot__item {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   min-height: 44px;
 }
-.foot__files a:hover { color: var(--accent); }
+.foot__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text);
+}
+.foot__link:hover { color: var(--accent); }
+.foot__link--empty { color: var(--muted); }
+.foot__item-note { font-size: 0.78rem; color: var(--muted); }
+.foot__item--pending { color: var(--muted); align-items: center; }
+.foot__top {
+  margin-top: 1rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.foot__top:hover { background: #26323E; }
+.foot__top:active { transform: translateY(1px); }
 
 /* Content-driven states: one column, then two, then the full grid, so tablet and
    small-laptop widths are designed rather than inherited. */

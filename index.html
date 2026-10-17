@@ -63,14 +63,23 @@
         <p class="today__note" id="today-note" hidden></p>
 
         <div class="tabs tabs--tight" role="tablist" aria-label="Isi hari ini">
-          <button class="tab" type="button" role="tab" id="tab-ini-pelajaran" aria-controls="panel-ini-pelajaran" aria-selected="true">Pelajaran Hari Ini</button>
-          <button class="tab" type="button" role="tab" id="tab-ini-seragam" aria-controls="panel-ini-seragam" aria-selected="false" tabindex="-1">Seragam Hari Ini</button>
+          <button class="tab" type="button" role="tab" id="tab-ini-pelajaran" aria-controls="panel-ini-pelajaran" aria-selected="true">Pelajaran</button>
+          <button class="tab" type="button" role="tab" id="tab-ini-piket" aria-controls="panel-ini-piket" aria-selected="false" tabindex="-1">Piket</button>
+          <button class="tab" type="button" role="tab" id="tab-ini-seragam" aria-controls="panel-ini-seragam" aria-selected="false" tabindex="-1">Seragam</button>
         </div>
 
         <div class="tabpanel" role="tabpanel" id="panel-ini-pelajaran" aria-labelledby="tab-ini-pelajaran" tabindex="0">
           <div class="readout" id="today-lessons">
             <div class="state state--loading" role="status">
               <p class="state__text">Memuat jadwal hari ini...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="panel-ini-piket" aria-labelledby="tab-ini-piket" tabindex="0" hidden>
+          <div class="today-duty" id="today-duty">
+            <div class="state state--loading" role="status">
+              <p class="state__text">Memuat piket hari ini...</p>
             </div>
           </div>
         </div>
@@ -182,14 +191,10 @@
         Seluruh informasi dan data pada halaman ini dikelola secara dinamis agar mudah diperbarui sewaktu-waktu.
       </p>
     </div>
-    <div class="foot__files">
-      <p class="foot__title">Menu Pintasan</p>
-      <ul>
-        <li><a href="#beranda">Kembali ke Beranda</a></li>
-        <li><a href="#siswa">Daftar Siswa</a></li>
-        <li><a href="#jadwal">Jadwal Belajar</a></li>
-        <li><a href="#struktur">Struktur Kelas</a></li>
-        <li><a href="#galeri">Galeri Kegiatan</a></li>
+    <div class="foot__links">
+      <p class="foot__title">Tautan Kelas</p>
+      <ul class="foot__list" id="foot-links">
+        <li class="foot__item foot__item--pending">Memuat tautan...</li>
       </ul>
     </div>
   </div>

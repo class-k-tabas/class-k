@@ -7,7 +7,8 @@
     lessons: 'assets/data/schedule_lesson.csv',
     duty: 'assets/data/schedule_duty.csv',
     gallery: 'assets/data/gallery.csv',
-    uniforms: 'assets/data/uniform.csv'
+    uniforms: 'assets/data/uniform.csv',
+    links: 'assets/data/links.csv'
   };
 
   var UNIFORM_DIR = 'assets/images/uniforms/';
@@ -100,6 +101,38 @@
     return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
   }
 
+  function parseLinks(rows) {
+    var head = -1;
+    rows.some(function (row, index) {
+      var first = cell(row, 0).toLowerCase();
+      if (first === 'label' || first === 'nama' || first === 'platform' || first === 'situs') {
+        head = index;
+        return true;
+      }
+      return false;
+    });
+    if (head === -1) return null;
+
+    var urlCol = -1;
+    rows[head].some(function (raw, index) {
+      var name = String(raw || '').trim().toLowerCase();
+      if (name === 'url' || name === 'link' || name.indexOf('tautan') === 0) {
+        urlCol = index;
+        return true;
+      }
+      return false;
+    });
+    if (urlCol === -1) urlCol = 1;
+
+    var links = [];
+    rows.slice(head + 1).forEach(function (row) {
+      var label = cell(row, 0);
+      if (!label) return;
+      links.push({ label: label, url: cell(row, urlCol) });
+    });
+    return links;
+  }
+
   function parseUniforms(rows) {
     var head = -1;
     rows.some(function (row, index) {
@@ -143,6 +176,20 @@
       return false;
     });
     return found;
+  }
+
+  // Names of the students on duty today, keyed by normalised name so the student
+  // list can tag them without caring about spelling differences.
+  function todayDutyNames(duty) {
+    var info = todayInfo();
+    var map = {};
+    if (!duty || !info.key) return map;
+    var day = findDayName(duty, info.key);
+    if (!day) return map;
+    (duty.byDay[day] || []).forEach(function (item) {
+      map[normalizeName(item.name)] = true;
+    });
+    return map;
   }
 
   function parseStudents(rows) {
@@ -360,7 +407,7 @@
     return box;
   }
 
-  function studentCard(student, roleByName) {
+  function studentCard(student, roleByName, dutyNames) {
     var card = el('article', 'card');
     card.appendChild(el('span', 'card__no', String(student.no)));
     card.appendChild(buildAvatar(student));
@@ -370,6 +417,9 @@
 
     var role = roleByName[normalizeName(student.name)];
     if (role) body.appendChild(el('p', 'card__role', role));
+    if (dutyNames[normalizeName(student.name)]) {
+      body.appendChild(el('p', 'card__duty', 'Piket'));
+    }
     card.appendChild(body);
     return card;
   }
@@ -626,6 +676,63 @@
     host.appendChild(list);
   }
 
+  function renderTodayDuty(host, duty) {
+    var info = todayInfo();
+    if (!info.key) {
+      showEmpty(host, 'Tidak ada piket hari ini', info.note);
+      return;
+    }
+    if (!duty) {
+      showError(host, 'Jadwal piket hari ini belum bisa dimuat.');
+      return;
+    }
+
+    var dayName = findDayName(duty, info.key);
+    if (!dayName) {
+      showEmpty(host, 'Hari ini belum ada di data piket',
+        'Kolom hari di assets/data/schedule_duty.csv belum memuat hari ini.');
+      return;
+    }
+
+    var entries = duty.byDay[dayName] || [];
+    if (!entries.length) {
+      showEmpty(host, 'Belum ada petugas piket',
+        'Nama petugas untuk ' + dayName + ' masih kosong di assets/data/schedule_duty.csv.');
+      return;
+    }
+
+    host.textContent = '';
+    var list = el('ul', 'duties');
+    entries.forEach(function (entry) { list.appendChild(dutyRow(entry)); });
+    host.appendChild(list);
+    host.appendChild(el('p', 'day__total', entries.length + ' siswa bertugas hari ' + dayName));
+  }
+
+  function renderFooterLinks(host, links) {
+    host.textContent = '';
+    if (!links || !links.length) {
+      var pending = el('li', 'foot__item foot__item--pending');
+      pending.textContent = 'Belum ada tautan di assets/data/links.csv';
+      host.appendChild(pending);
+      return;
+    }
+
+    links.forEach(function (link) {
+      var item = el('li', 'foot__item');
+      if (link.url) {
+        var anchor = el('a', 'foot__link', link.label);
+        anchor.href = link.url;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        item.appendChild(anchor);
+      } else {
+        item.appendChild(el('span', 'foot__link foot__link--empty', link.label));
+        item.appendChild(el('span', 'foot__item-note', 'tautan belum diisi'));
+      }
+      host.appendChild(item);
+    });
+  }
+
   function renderUniform(host, lessons, uniforms) {
     host.textContent = '';
     var info = todayInfo();
@@ -700,7 +807,7 @@
     return ok;
   }
 
-  function wireStudents(students, roleByName) {
+  function wireStudents(students, roleByName, dutyNames) {
     var grid = document.getElementById('students-grid');
     var search = document.getElementById('cari-siswa');
     var count = document.getElementById('siswa-count');
@@ -743,7 +850,7 @@
       grid.textContent = '';
       var fragment = document.createDocumentFragment();
       list.forEach(function (student) {
-        fragment.appendChild(studentCard(student, roleByName));
+        fragment.appendChild(studentCard(student, roleByName, dutyNames));
       });
       grid.appendChild(fragment);
     }
@@ -888,6 +995,17 @@
     });
   }
 
+  function wireBackToTop() {
+    var button = document.getElementById('foot-top');
+    if (!button) return;
+    button.addEventListener('click', function () {
+      // No behavior option on purpose: the CSS decides, so reduced-motion users get a jump.
+      window.scrollTo({ top: 0 });
+      var brand = document.querySelector('.brand');
+      if (brand) brand.focus({ preventScroll: true });
+    });
+  }
+
   function wireLightbox() {
     var lightbox = document.getElementById('lightbox');
     var closeButton = document.getElementById('lightbox-close');
@@ -910,13 +1028,16 @@
     wireTabs();
     wireScrollState();
     wireLightbox();
+    wireBackToTop();
 
     var lessonsHost = document.getElementById('lesson-days');
     var dutyHost = document.getElementById('duty-days');
     var orgHost = document.getElementById('org-tree');
     var galleryHost = document.getElementById('gallery-grid');
     var todayLessonsHost = document.getElementById('today-lessons');
+    var todayDutyHost = document.getElementById('today-duty');
     var todayUniformHost = document.getElementById('today-uniform');
+    var footLinksHost = document.getElementById('foot-links');
     var lightbox = document.getElementById('lightbox');
 
     var studentsPromise = loadCsv(FILES.students).then(parseStudents);
@@ -925,6 +1046,7 @@
     var dutyPromise = loadCsv(FILES.duty).then(parseDuty);
     var galleryPromise = loadCsv(FILES.gallery).then(parseGallery);
     var uniformsPromise = loadCsv(FILES.uniforms).then(parseUniforms);
+    var linksPromise = loadCsv(FILES.links).then(parseLinks);
 
     var students = null;
     var org = null;
@@ -936,29 +1058,44 @@
     function renderTodayPanel() {
       renderToday(lessons);
       renderTodayLessons(todayLessonsHost, lessons);
+      renderTodayDuty(todayDutyHost, duty);
       renderUniform(todayUniformHost, lessons, uniformsFailed ? null : uniforms);
     }
 
-    studentsPromise.then(function (list) {
-      students = list;
+    function renderStudentGrid() {
       var grid = document.getElementById('students-grid');
-      if (!list.length) {
+      if (!students) {
+        showError(grid, 'Daftar siswa belum dapat dimuat.');
+        var counter = document.getElementById('siswa-count');
+        if (counter) counter.textContent = 'Daftar siswa belum termuat, muat ulang halaman untuk mencoba lagi.';
+        return;
+      }
+      if (!students.length) {
         showEmpty(grid, 'Daftar siswa masih kosong', 'Informasi anggota kelas akan segera diperbarui.');
         return;
       }
-      if (org) wireStudents(list, org.roleByName);
-    }).catch(function () {
-      showError(document.getElementById('students-grid'), 'Daftar siswa belum dapat dimuat.');
-      var counter = document.getElementById('siswa-count');
-      if (counter) counter.textContent = 'Daftar siswa belum termuat, muat ulang halaman untuk mencoba lagi.';
-    });
+      wireStudents(students, org ? org.roleByName : {}, todayDutyNames(duty));
+    }
 
-    orgPromise.then(function (result) {
-      org = result;
-      renderOrganization(orgHost, result);
-      if (students && students.length) wireStudents(students, result.roleByName);
-    }).catch(function () {
-      showError(orgHost, 'Struktur organisasi belum dapat dimuat.');
+    // Students, duties and the organization render together so the Piket tag on each
+    // card and the role tag always agree with the data at the same moment.
+    Promise.allSettled([studentsPromise, dutyPromise, orgPromise]).then(function (settled) {
+      var studentsOk = settled[0].status === 'fulfilled';
+      var dutyOk = settled[1].status === 'fulfilled';
+      var orgOk = settled[2].status === 'fulfilled';
+
+      students = studentsOk ? settled[0].value : null;
+      duty = dutyOk ? settled[1].value : null;
+      org = orgOk ? settled[2].value : null;
+
+      if (dutyOk) renderDuty(dutyHost, duty);
+      else showError(dutyHost, 'Jadwal piket belum dapat dimuat.');
+
+      if (orgOk) renderOrganization(orgHost, org);
+      else showError(orgHost, 'Struktur organisasi belum dapat dimuat.');
+
+      renderStudentGrid();
+      renderTodayDuty(todayDutyHost, duty);
     });
 
     lessonsPromise.then(function (result) {
@@ -970,19 +1107,18 @@
       renderTodayPanel();
     });
 
-    dutyPromise.then(function (result) {
-      duty = result;
-      renderDuty(dutyHost, result);
-    }).catch(function () {
-      showError(dutyHost, 'Jadwal piket belum dapat dimuat.');
-    });
-
     uniformsPromise.then(function (result) {
       uniforms = result;
       renderUniform(todayUniformHost, lessons, uniforms);
     }).catch(function () {
       uniformsFailed = true;
       renderUniform(todayUniformHost, lessons, null);
+    });
+
+    linksPromise.then(function (links) {
+      renderFooterLinks(footLinksHost, links);
+    }).catch(function () {
+      renderFooterLinks(footLinksHost, null);
     });
 
     galleryPromise.then(function (items) {

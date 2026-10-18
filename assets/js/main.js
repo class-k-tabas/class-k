@@ -201,8 +201,14 @@
     if (head === -1) return [];
 
     var photoCol = -1;
+    var genderCol = -1;
     rows[head].some(function (raw, index) {
-      if (String(raw || '').trim().toLowerCase() === 'foto') { photoCol = index; return true; }
+      var name = String(raw || '').trim().toLowerCase();
+      if (name === 'foto') { photoCol = index; return true; }
+      if (name === 'kelamin' || name === 'jenis kelamin' || name === 'gender') {
+        genderCol = index;
+        return true;
+      }
       return false;
     });
 
@@ -211,7 +217,14 @@
       var no = parseInt(cell(row, 0).replace(/[^0-9]/g, ''), 10);
       var name = cell(row, 1);
       if (!name || isNaN(no)) return;
-      list.push({ no: no, name: name, photo: photoCol > -1 ? cell(row, photoCol) : '' });
+      var gender = genderCol > -1 ? cell(row, genderCol).toUpperCase() : '';
+      if (gender !== 'L' && gender !== 'P') gender = '';
+      list.push({
+        no: no,
+        name: name,
+        photo: photoCol > -1 ? cell(row, photoCol) : '',
+        gender: gender
+      });
     });
     list.sort(function (a, b) { return a.no - b.no; });
     return list;
@@ -919,12 +932,14 @@
   }
 
   function wireScrollState() {
-    var sections = ['beranda', 'siswa', 'jadwal', 'struktur', 'galeri']
-      .map(function (id) { return document.getElementById(id); })
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav__list a[href^="#"]'));
+    // Sections come from the nav itself, so adding or renaming a section can never
+    // leave the indicator pointing at a section that is no longer in the menu.
+    var sections = links
+      .map(function (link) { return document.getElementById(link.getAttribute('href').slice(1)); })
       .filter(Boolean);
     if (!sections.length) return;
 
-    var links = Array.prototype.slice.call(document.querySelectorAll('.nav__list a'));
     var bar = document.querySelector('.nav');
     var ticking = false;
 
@@ -995,6 +1010,571 @@
     });
   }
 
+  // Fisher-Yates, the shuffle the PRD asks for.
+  function shuffle(list) {
+    var copy = list.slice();
+    for (var i = copy.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = copy[i];
+      copy[i] = copy[j];
+      copy[j] = temp;
+    }
+    return copy;
+  }
+
+  // Deals each pool round-robin into the same running slot, so group sizes end up
+  // within one of each other while every pool still spreads evenly.
+  function dealEvenly(pools, groupCount) {
+    var groups = [];
+    for (var g = 0; g < groupCount; g++) groups.push([]);
+    var slot = 0;
+    var round = 0;
+    var remaining = pools.reduce(function (sum, pool) { return sum + pool.length; }, 0);
+
+    while (remaining > 0) {
+      for (var p = 0; p < pools.length; p++) {
+        if (round >= pools[p].length) continue;
+        groups[slot % groupCount].push(pools[p][round]);
+        slot++;
+        remaining--;
+      }
+      round++;
+    }
+    return groups;
+  }
+
+  // Gender comes from the Kelamin column in students.csv and is never guessed from a
+  // name. Without that column the shuffle is plain random, which is what the PRD
+  // asks for in the absence of real data.
+  function buildGroups(students, groupCount) {
+    var males = [];
+    var females = [];
+    var rest = [];
+    students.forEach(function (student) {
+      if (student.gender === 'L') males.push(student.name);
+      else if (student.gender === 'P') females.push(student.name);
+      else rest.push(student.name);
+    });
+
+    if (!males.length && !females.length) {
+      return { groups: dealEvenly([shuffle(rest)], groupCount), balanced: false, counts: null };
+    }
+
+    var pools = [shuffle(males), shuffle(females), shuffle(rest)].filter(function (pool) {
+      return pool.length > 0;
+    });
+    return {
+      groups: dealEvenly(pools, groupCount),
+      balanced: true,
+      counts: { L: males.length, P: females.length, other: rest.length }
+    };
+  }
+
+  function groupsToWhatsApp(groups) {
+    var today = new Date();
+    var date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(today);
+    var lines = ['*Acak Kelompok X TKJ K*', date, ''];
+    groups.forEach(function (names, index) {
+      lines.push('*Kelompok ' + (index + 1) + '* (' + names.length + ' siswa)');
+      names.forEach(function (name, position) {
+        lines.push((position + 1) + '. ' + name);
+      });
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+
+  function renderGroups(host, groups) {
+    host.textContent = '';
+    var summary = el('p', 'groups__summary');
+    var sizes = groups.map(function (names) { return names.length; });
+    summary.textContent = groups.length + ' kelompok, ukuran ' +
+      Math.min.apply(null, sizes) + ' sampai ' + Math.max.apply(null, sizes) + ' siswa.';
+    host.appendChild(summary);
+
+    var list = el('ol', 'groups');
+    groups.forEach(function (names, index) {
+      var card = el('li', 'groups__card');
+      card.appendChild(el('h4', 'groups__name', 'Kelompok ' + (index + 1)));
+      card.appendChild(el('p', 'groups__count', names.length + ' siswa'));
+      var names_ = el('ol', 'groups__names');
+      names.forEach(function (name) {
+        var row = el('li', 'groups__item', name);
+        names_.appendChild(row);
+      });
+      card.appendChild(names_);
+      list.appendChild(card);
+    });
+    host.appendChild(list);
+  }
+
+  function wireGroupTool(students) {
+    var host = document.getElementById('kelompok-hasil');
+    var shuffleButton = document.getElementById('kelopedia-acak');
+    var copyButton = document.getElementById('kelopedia-salin');
+    var valueInput = document.getElementById('kelompok-nilai');
+    var noteNode = document.getElementById('kelompok-note');
+    var modeInputs = Array.prototype.slice.call(document.querySelectorAll('input[name="kelompok-mode"]'));
+    var label = valueInput.closest('.field').querySelector('.field__label');
+    if (!host || !shuffleButton) return;
+
+    function mode() {
+      return modeInputs[0].checked ? 'groups' : 'size';
+    }
+
+    function groupCount() {
+      var total = students.length;
+      var raw = parseInt(valueInput.value, 10);
+      if (mode() === 'groups') {
+        if (isNaN(raw) || raw < 1) return 1;
+        return Math.min(raw, total);
+      }
+      if (isNaN(raw) || raw < 1) raw = 1;
+      return Math.ceil(total / raw);
+    }
+
+    function syncMode() {
+      label.textContent = mode() === 'groups' ? 'Jumlah kelompok' : 'Siswa per kelompok';
+      valueInput.max = String(students.length);
+    }
+
+    function paintNote(result) {
+      if (!noteNode) return;
+      if (!result.balanced) {
+        noteNode.textContent = 'Kolom Kelamin di assets/data/students.csv masih kosong, jadi pengacakan berjalan acak murni.';
+        noteNode.classList.remove('tool__note--active');
+        return;
+      }
+      noteNode.textContent = 'Seimbang dipakai dari kolom Kelamin: ' + result.counts.L +
+        ' laki-laki, ' + result.counts.P + ' perempuan, ' + result.counts.other + ' belum ditandai.';
+      noteNode.classList.add('tool__note--active');
+    }
+
+    function run() {
+      var result = buildGroups(students, groupCount());
+      paintNote(result);
+      renderGroups(host, result.groups);
+      copyButton.disabled = false;
+      copyButton.onclick = function () {
+        var text = groupsToWhatsApp(result.groups);
+        copyText(text).then(function (ok) {
+          var toast = document.getElementById('toast');
+          if (!toast) return;
+          toast.textContent = ok
+            ? 'Menyalin ' + result.groups.length + ' kelompok ke papan klip.'
+            : 'Browser menolak menyalin otomatis, salin manual dari daftar di atas.';
+          toast.hidden = false;
+          window.clearTimeout(toast._timer);
+          toast._timer = window.setTimeout(function () { toast.hidden = true; }, 5000);
+        });
+      };
+    }
+
+    modeInputs.forEach(function (input) { input.addEventListener('change', syncMode); });
+    shuffleButton.addEventListener('click', run);
+
+    syncMode();
+    run();
+  }
+
+  function ipToInt(ip) {
+    var parts = ip.trim().split('.');
+    if (parts.length !== 4) return null;
+    var value = 0;
+    for (var i = 0; i < 4; i++) {
+      if (!/^\d{1,3}$/.test(parts[i])) return null;
+      var octet = parseInt(parts[i], 10);
+      if (octet > 255) return null;
+      value = ((value << 8) | octet) >>> 0;
+    }
+    return value;
+  }
+
+  function intToIp(value) {
+    return [(value >>> 24) & 255, (value >>> 16) & 255, (value >>> 8) & 255, value & 255].join('.');
+  }
+
+  function calculateSubnet(ipText, prefix) {
+    var ip = ipToInt(ipText);
+    if (ip === null) return null;
+    var mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+    var network = (ip & mask) >>> 0;
+    var broadcast = (network | (~mask >>> 0)) >>> 0;
+    var total = Math.pow(2, 32 - prefix) - 2;
+    return {
+      mask: intToIp(mask),
+      network: intToIp(network),
+      broadcast: intToIp(broadcast),
+      first: intToIp((network + 1) >>> 0),
+      last: intToIp((broadcast - 1) >>> 0),
+      total: total,
+      isNetworkAddress: network === ip
+    };
+  }
+
+  function wireSubnetTool() {
+    var ipInput = document.getElementById('subnet-ip');
+    var prefixSelect = document.getElementById('subnet-prefix');
+    var host = document.getElementById('subnet-hasil');
+    if (!ipInput || !prefixSelect || !host) return;
+
+    for (var prefix = 8; prefix <= 30; prefix++) {
+      var option = document.createElement('option');
+      option.value = String(prefix);
+      option.textContent = '/' + prefix;
+      prefixSelect.appendChild(option);
+    }
+    prefixSelect.value = '24';
+
+    // dl > div wrappers keep dt and dd paired, which is what HTML allows.
+    function row(term, value) {
+      var wrap = el('div', 'calc__row');
+      wrap.appendChild(el('dt', 'calc__term', term));
+      wrap.appendChild(el('dd', 'calc__value', value));
+      return wrap;
+    }
+
+    function paint() {
+      var text = ipInput.value.trim();
+      host.textContent = '';
+      if (!text) {
+        showEmpty(host, 'Belum ada alamat IP',
+          'Ketik alamat IPv4, contoh 192.168.10.1, lalu pilih prefixnya.');
+        return;
+      }
+
+      var result = calculateSubnet(text, parseInt(prefixSelect.value, 10));
+      if (!result) {
+        showEmpty(host, 'Alamat IP tidak bisa dibaca',
+          'Formatnya harus empat oket angka 0 sampai 255, contoh 192.168.10.1.');
+        return;
+      }
+
+      var list = el('dl', 'calc');
+      list.appendChild(row('Subnet Mask', result.mask));
+      list.appendChild(row('Network Address', result.network));
+      list.appendChild(row('Broadcast Address', result.broadcast));
+      list.appendChild(row('Range Host Usable', result.first + ' sampai ' + result.last));
+      list.appendChild(row('Total Host Usable', String(result.total)));
+      host.appendChild(list);
+
+      if (!result.isNetworkAddress) {
+        host.appendChild(el('p', 'calc__note',
+          'IP yang diketik bukan alamat jaringan blok ini. Perhitungannya tetap sama, ' +
+          'karena blok selalu dimulai dari ' + result.network + '.'));
+      }
+    }
+
+    ipInput.addEventListener('input', paint);
+    prefixSelect.addEventListener('change', paint);
+    paint();
+  }
+
+  function wireWheelTool(students) {
+    var canvas = document.getElementById('wheel-canvas');
+    var listHost = document.getElementById('wheel-list');
+    var spinButton = document.getElementById('wheel-spin');
+    var resetButton = document.getElementById('wheel-reset');
+    var excludeBox = document.getElementById('wheel-exclude');
+    var dialog = document.getElementById('winner-dialog');
+    if (!canvas || !spinButton || !listHost) return;
+
+    var ctx = canvas.getContext('2d');
+    var SLICE_A = '#2E5F49';
+    var SLICE_B = '#2C3A4A';
+    var TEXT = '#E8EDF2';
+    var active = students.map(function (student) { return student.name; });
+    var rotation = -Math.PI / 2;
+    var spinning = false;
+    var lastWinner = null;
+
+    function radius() {
+      return Math.min(canvas.width, canvas.height) / 2 - 10;
+    }
+
+    function paintList() {
+      listHost.textContent = '';
+      if (!active.length) {
+        var empty = el('li', 'wheel__empty', 'Semua nama sudah keluar. Klik Kembalikan Semua Nama untuk mengulang.');
+        listHost.appendChild(empty);
+        return;
+      }
+      active.forEach(function (name, index) {
+        var item = el('li', 'wheel__item' + (name === lastWinner ? ' wheel__item--winner' : ''));
+        item.appendChild(el('span', 'wheel__number', String(index + 1)));
+        item.appendChild(el('span', 'wheel__name', name));
+        listHost.appendChild(item);
+      });
+    }
+
+    function draw() {
+      var w = canvas.width;
+      var h = canvas.height;
+      var cx = w / 2;
+      var cy = h / 2;
+      var r = radius();
+      var count = active.length;
+      var winnerIndex = active.indexOf(lastWinner);
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+
+      if (!count) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#141A22';
+        ctx.fill();
+        ctx.strokeStyle = '#2A3542';
+        ctx.stroke();
+        ctx.restore();
+        canvas.setAttribute('aria-label', 'Roda undian kosong, tidak ada nama tersisa');
+        return;
+      }
+
+      var slice = (Math.PI * 2) / count;
+      for (var i = 0; i < count; i++) {
+        var start = i * slice;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, start, start + slice);
+        ctx.closePath();
+        ctx.fillStyle = (i === winnerIndex) ? '#46E08A' : ((i % 2 === 0) ? SLICE_A : SLICE_B);
+        ctx.fill();
+        ctx.strokeStyle = '#0B0F14';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      var showName = slice > 0.21;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (var j = 0; j < count; j++) {
+        var mid = j * slice + slice / 2;
+        ctx.save();
+        ctx.rotate(mid);
+        ctx.fillStyle = (j === winnerIndex) ? '#0B0F14' : TEXT;
+        ctx.font = '600 13px "Segoe UI", system-ui, sans-serif';
+        ctx.fillText(String(j + 1), r * 0.78, 0);
+        if (showName) {
+          ctx.font = '13px "Segoe UI", system-ui, sans-serif';
+          var label = active[j];
+          var max = Math.max(4, Math.floor((slice * r) / 7));
+          while (label.length > max && label.length > 4) label = label.slice(0, -2) + '.';
+          ctx.fillText(label, r * 0.55, 0);
+        }
+        ctx.restore();
+      }
+      ctx.restore();
+
+      canvas.setAttribute('aria-label', 'Roda undian berisi ' + count + ' nama aktif' +
+        (lastWinner ? ', nama ' + lastWinner + ' keluar terakhir' : ''));
+    }
+
+    function spin() {
+      if (spinning || !active.length) return;
+      spinning = true;
+      lastWinner = null;
+      spinButton.disabled = true;
+      spinButton.textContent = 'Memutar...';
+      paintList();
+      draw();
+
+      var count = active.length;
+      var slice = (Math.PI * 2) / count;
+      var duration = motionEnabled() ? 5200 : 0;
+      var turns = 4 + Math.floor(Math.random() * 3);
+      // The landing angle covers the whole wheel, not just one sector. Picking a
+      // sector near the current position makes the wheel repeat the previous winner
+      // about half the time, because it can only stay put or step back one.
+      var landing = Math.random() * Math.PI * 2;
+      var target = rotation + turns * Math.PI * 2 + landing;
+      var from = rotation;
+      var startTime = null;
+
+      function finish() {
+        var pointer = -Math.PI / 2;
+        var relative = ((pointer - rotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+        var index = Math.floor(relative / slice);
+        if (index < 0) index = 0;
+        if (index > count - 1) index = count - 1;
+
+        var winner = active[index];
+        lastWinner = winner;
+        spinning = false;
+        spinButton.disabled = false;
+        spinButton.textContent = 'Putar Roda';
+
+        if (excludeBox.checked) active.splice(index, 1);
+        paintList();
+        draw();
+
+        document.getElementById('winner-name').textContent = winner;
+        document.getElementById('winner-meta').textContent =
+          'Sisa nama aktif: ' + active.length + ' dari ' + students.length + '.';
+        if (dialog && !dialog.open) {
+          if (typeof dialog.showModal === 'function') dialog.showModal();
+          else dialog.setAttribute('open', 'open');
+        }
+      }
+
+      function frame(now) {
+        if (startTime === null) startTime = now;
+        var progress = duration === 0 ? 1 : Math.min(1, (now - startTime) / duration);
+        // Cubic easing: the wheel still speeds up then slows, but the last second is
+        // easier to follow than a sharper curve.
+        var eased = 1 - Math.pow(1 - progress, 3);
+        rotation = from + (target - from) * eased;
+        draw();
+        if (progress < 1) {
+          window.requestAnimationFrame(frame);
+        } else {
+          finish();
+        }
+      }
+
+      window.requestAnimationFrame(frame);
+    }
+
+    spinButton.addEventListener('click', spin);
+    resetButton.addEventListener('click', function () {
+      active = students.map(function (student) { return student.name; });
+      lastWinner = null;
+      spinButton.textContent = 'Putar Roda';
+      paintList();
+      draw();
+    });
+
+    var closeButton = document.getElementById('winner-close');
+    if (closeButton && dialog) {
+      closeButton.addEventListener('click', function () {
+        if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+        else dialog.removeAttribute('open');
+      });
+    }
+    if (dialog) {
+      dialog.addEventListener('click', function (event) {
+        if (event.target !== dialog) return;
+        if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+        else dialog.removeAttribute('open');
+      });
+    }
+
+    paintList();
+    draw();
+  }
+
+  function wireUtility(students) {
+    var host = document.getElementById('utility');
+    if (!host) return;
+    if (!students || !students.length) {
+      showError(document.getElementById('kelompok-hasil'),
+        'Alat ini memakai daftar siswa, dan daftar siswa belum termuat.');
+      var wheelHost = document.getElementById('wheel-list');
+      if (wheelHost) showError(wheelHost, 'Roda undian butuh daftar siswa.');
+      return;
+    }
+    wireGroupTool(students);
+    wireSubnetTool();
+    wireWheelTool(students);
+  }
+
+  // Motion state, in order of authority: the footer switch, then the OS preference.
+  function motionEnabled() {
+    var explicit = document.documentElement.getAttribute('data-motion');
+    if (explicit === 'on') return true;
+    if (explicit === 'off') return false;
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function applyMotion(on) {
+    document.documentElement.setAttribute('data-motion', on ? 'on' : 'off');
+    var hint = document.getElementById('motion-hint');
+    if (hint) {
+      hint.textContent = on
+        ? 'Gerak halus aktif: pindah seksi dan putaran roda.'
+        : 'Gerak dimatikan: perpindahan seksi dan roda langsung tampil.';
+    }
+  }
+
+  function wireMotionToggle() {
+    var toggle = document.getElementById('motion-toggle');
+    if (!toggle) return;
+
+    var stored = null;
+    try { stored = window.localStorage.getItem('tkjk-motion'); } catch (error) { stored = null; }
+    applyMotion(stored === 'on' || (stored !== 'off' && motionEnabled()));
+    toggle.checked = motionEnabled();
+
+    toggle.addEventListener('change', function () {
+      applyMotion(toggle.checked);
+      try { window.localStorage.setItem('tkjk-motion', toggle.checked ? 'on' : 'off'); } catch (error) { /* storage may be blocked */ }
+    });
+  }
+
+  // Browsers disable CSS smooth scrolling when the operating system has animations
+  // turned off, so an enabled page animation is done here instead of relying on
+  // scroll-behavior alone.
+  function wireSmoothScroll() {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav__list a[href^="#"]'));
+    var bar = document.querySelector('.nav');
+    var toggle = document.getElementById('nav-toggle');
+    var panel = document.getElementById('nav-links');
+    var running = false;
+
+    function closeMenu() {
+      if (!toggle || !panel) return;
+      panel.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = 'Menu';
+    }
+
+    function glideTo(target) {
+      if (running) return;
+      var gap = (bar ? bar.offsetHeight : 58) + 16;
+      var destination = Math.max(0, Math.round(target.getBoundingClientRect().top + window.scrollY - gap));
+      var start = window.scrollY;
+      var distance = destination - start;
+      if (Math.abs(distance) < 2) return;
+
+      running = true;
+      var began = null;
+      var length = 550;
+
+      function step(now) {
+        if (began === null) began = now;
+        var progress = Math.min(1, (now - began) / length);
+        var eased = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        window.scrollTo(0, start + distance * eased);
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          running = false;
+          if (history.replaceState) history.replaceState(null, '', '#' + target.id);
+          if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+          target.focus({ preventScroll: true });
+        }
+      }
+
+      window.requestAnimationFrame(step);
+    }
+
+    links.forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        var target = document.getElementById(link.getAttribute('href').slice(1));
+        if (!target) return;
+        closeMenu();
+        // With motion off, leave the browser to its own instant jump.
+        if (!motionEnabled()) return;
+        event.preventDefault();
+        glideTo(target);
+      });
+    });
+  }
+
   function wireBackToTop() {
     var button = document.getElementById('foot-top');
     if (!button) return;
@@ -1029,6 +1609,8 @@
     wireScrollState();
     wireLightbox();
     wireBackToTop();
+    wireMotionToggle();
+    wireSmoothScroll();
 
     var lessonsHost = document.getElementById('lesson-days');
     var dutyHost = document.getElementById('duty-days');
@@ -1075,6 +1657,7 @@
         return;
       }
       wireStudents(students, org ? org.roleByName : {}, todayDutyNames(duty));
+      wireUtility(students);
     }
 
     // Students, duties and the organization render together so the Piket tag on each

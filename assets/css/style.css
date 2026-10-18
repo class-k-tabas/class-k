@@ -35,7 +35,6 @@
 
 html {
   scroll-padding-top: calc(var(--nav-h) + 16px);
-  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -721,6 +720,241 @@ code {
 .lightbox img { max-height: 70vh; width: auto; margin-inline: auto; border-radius: var(--radius); }
 .lightbox__caption { margin-top: 0.75rem; color: var(--muted); }
 
+/* Utility: three tools stacked as rows, each with controls beside its own output. */
+.tool {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--hairline);
+}
+.tool__title { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
+.tool__lead { margin-top: 0.35rem; color: var(--muted); max-width: 68ch; }
+.tool__note {
+  margin-top: 0.6rem;
+  max-width: 68ch;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.tool__note--active { color: var(--accent); }
+.tool__body {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+.tool__controls { display: grid; gap: 1rem; }
+.tool__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.tool__output { min-width: 0; }
+.btn--quiet { background: transparent; }
+.btn--quiet:hover { background: var(--panel-2); }
+
+.segmented {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.segmented legend { padding: 0; margin-bottom: 0.4rem; }
+.segmented__option { position: relative; display: inline-flex; }
+.segmented__option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.segmented__option span {
+  min-height: 44px;
+  padding: 0 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.segmented__option:hover span { color: var(--text); background: var(--panel-2); }
+.segmented__option input:checked + span {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+.segmented__option input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.field__input--number { max-width: 8rem; }
+.field__input--mono { font-family: var(--font-mono); letter-spacing: 0.01em; }
+
+
+.groups__summary { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.8rem; }
+.groups {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+.groups__card {
+  padding: 0.85rem 0.95rem;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+.groups__name { font-size: 0.92rem; font-weight: 700; }
+.groups__count {
+  margin-top: 0.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.groups__names {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--hairline);
+  display: grid;
+  gap: 0.2rem;
+  counter-reset: member;
+}
+.groups__item { line-height: 1.4; font-size: 0.9rem; }
+
+.calc {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.calc__row {
+  display: grid;
+  gap: 0.15rem 1rem;
+  padding: 0.7rem 0.95rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+}
+.calc__row:last-child { border-bottom: 0; }
+.calc__term { color: var(--muted); font-size: 0.85rem; }
+.calc__value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.calc__note {
+  margin-top: 0.7rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.wheel {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+.wheel__stage {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin-inline: auto;
+}
+.wheel__canvas { width: 100%; height: auto; display: block; }
+.wheel__pointer {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin-left: -11px;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 20px solid var(--accent);
+}
+.wheel__side { display: grid; gap: 0.85rem; min-width: 0; }
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.check input { width: 18px; height: 18px; accent-color: #46E08A; cursor: pointer; }
+.wheel__list {
+  display: grid;
+  gap: 0.25rem;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.wheel__item {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+}
+.wheel__item:nth-child(odd) { background: rgba(255, 255, 255, 0.02); }
+.wheel__number { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.wheel__item--winner { background: var(--accent-tint); }
+.wheel__item--winner .wheel__name { color: var(--accent); font-weight: 600; }
+.wheel__empty { color: var(--muted); font-size: 0.9rem; }
+
+.winner {
+  width: min(92vw, 26rem);
+  padding: 1.4rem;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+.winner::backdrop { background: rgba(6, 9, 12, 0.82); }
+.winner__close {
+  min-height: 44px;
+  padding: 0 1rem;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.winner__close:hover { background: #26323E; }
+.winner__label {
+  margin-top: 1rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.winner__name {
+  margin-top: 0.3rem;
+  font-size: clamp(1.4rem, 1.1rem + 1.4vw, 1.9rem);
+  font-weight: 700;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.winner__meta { margin-top: 0.5rem; color: var(--muted); font-size: 0.88rem; }
+
+@media (min-width: 720px) {
+  .tool__body { grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); }
+  /* One single block per row, such as the wheel, needs the whole width. */
+  .tool__body--wide { grid-template-columns: minmax(0, 1fr); }
+  .wheel { grid-template-columns: 340px minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .calc__row { grid-template-columns: 1fr; }
+}
+
 /* Footer: the class identity on one side, its outbound links and a way back up on the other. */
 .foot {
   border-top: 1px solid var(--hairline);
@@ -731,6 +965,9 @@ code {
 }
 .foot__inner { display: grid; gap: 1.75rem; }
 .foot__title { color: var(--text); font-weight: 650; margin-bottom: 0.35rem; }
+.foot__title--spaced { margin-top: 1.4rem; }
+.foot__motion { color: var(--text); }
+.foot__hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.1rem; }
 .foot__list { display: grid; gap: 0.3rem; }
 .foot__item {
   display: flex;
@@ -820,7 +1057,9 @@ code {
   .students { grid-template-columns: 1fr; }
 }
 
+/* Smooth section scrolling is done in JavaScript, not with scroll-behavior, because
+   browsers suppress CSS smooth scrolling when the OS has animations turned off. */
+
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
   * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }

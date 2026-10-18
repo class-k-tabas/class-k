@@ -28,6 +28,7 @@
         <li><a href="#siswa">Siswa</a></li>
         <li><a href="#jadwal">Jadwal</a></li>
         <li><a href="#struktur">Struktur</a></li>
+        <li><a href="#utility">Utility</a></li>
         <li><a href="#galeri">Galeri</a></li>
       </ul>
     </nav>
@@ -169,6 +170,110 @@
     </div>
   </section>
 
+  <section class="section section--edge" id="utility" aria-labelledby="utility-judul">
+    <div class="shell">
+      <h2 class="section__title" id="utility-judul">Utility</h2>
+      <p class="section__lead">
+        Tiga alat bantu yang dipakai di kelas: membagi kelompok untuk praktikum,
+        menghitung blok IP buat latihan jaringan, dan mengundi giliran.
+        Semuanya dihitung di peramban, tidak ada data kelas yang dikirim ke mana pun.
+      </p>
+
+      <article class="tool" aria-labelledby="tool-kelompok-judul">
+        <div class="tool__head">
+          <h3 class="tool__title" id="tool-kelompok-judul">Acak Kelompok</h3>
+          <p class="tool__lead">
+            Membagi daftar siswa menjadi kelompok. Hasilnya bisa langsung disalin
+            dalam format yang enak dikirim ke grup WhatsApp kelas.
+          </p>
+          <p class="tool__note" id="kelompok-note"></p>
+        </div>
+        <div class="tool__body">
+          <div class="tool__controls">
+            <fieldset class="segmented">
+              <legend class="field__label">Mode Pembagian</legend>
+              <label class="segmented__option">
+                <input type="radio" name="kelompok-mode" value="groups" checked>
+                <span>Jumlah Kelompok</span>
+              </label>
+              <label class="segmented__option">
+                <input type="radio" name="kelompok-mode" value="size">
+                <span>Siswa per Kelompok</span>
+              </label>
+            </fieldset>
+
+            <div class="field">
+              <label class="field__label" for="kelompok-nilai">Jumlah kelompok</label>
+              <input class="field__input field__input--number" type="number" id="kelompok-nilai" value="5" min="1" max="43" step="1">
+            </div>
+
+            <div class="tool__actions">
+              <button class="btn" type="button" id="kelopedia-acak">Acak Kelompok</button>
+              <button class="btn btn--quiet" type="button" id="kelopedia-salin" disabled>Salin Teks WA</button>
+            </div>
+          </div>
+
+          <div class="tool__output" id="kelompok-hasil" aria-live="polite">
+            <div class="state state--loading" role="status">
+              <p class="state__text">Menyiapkan daftar siswa...</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tool" aria-labelledby="tool-subnet-judul">
+        <div class="tool__head">
+          <h3 class="tool__title" id="tool-subnet-judul">Kalkulator Subnet</h3>
+          <p class="tool__lead">
+            Menghitung blok IP dari satu alamat dan satu prefix. Dipakai buat
+            latihan subnetting di jam praktikum.
+          </p>
+        </div>
+        <div class="tool__body">
+          <div class="tool__controls">
+            <div class="field">
+              <label class="field__label" for="subnet-ip">Alamat IP</label>
+              <input class="field__input field__input--mono" type="text" id="subnet-ip" placeholder="192.168.10.1" inputmode="numeric" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="field">
+              <label class="field__label" for="subnet-prefix">Prefix (CIDR)</label>
+              <select class="field__input" id="subnet-prefix"></select>
+            </div>
+          </div>
+          <div class="tool__output" id="subnet-hasil" aria-live="polite"></div>
+        </div>
+      </article>
+
+      <article class="tool" aria-labelledby="tool-wheel-judul">
+        <div class="tool__head">
+          <h3 class="tool__title" id="tool-wheel-judul">Spin The Wheel</h3>
+          <p class="tool__lead">
+            Roda undian untuk memilih satu nama dari daftar aktif. Dipakai buat
+            giliran piket, kuis, atau presentasi.
+          </p>
+        </div>
+        <div class="tool__body tool__body--wide">
+          <div class="wheel">
+            <div class="wheel__stage">
+              <canvas class="wheel__canvas" id="wheel-canvas" width="340" height="340" role="img" aria-label="Roda undian"></canvas>
+              <span class="wheel__pointer" aria-hidden="true"></span>
+            </div>
+            <div class="wheel__side">
+              <div class="tool__actions">
+                <button class="btn" type="button" id="wheel-spin">Putar Roda</button>
+                <button class="btn btn--quiet" type="button" id="wheel-reset">Kembalikan Semua Nama</button>
+              </div>
+              <label class="check">
+                <input type="checkbox" id="wheel-exclude">
+                <span>Hapus nama terpilih dari putaran berikutnya</span>
+              </label>
+              <ol class="wheel__list" id="wheel-list"></ol>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
   <section class="section section--edge" id="galeri" aria-labelledby="galeri-judul">
     <div class="shell">
       <h2 class="section__title" id="galeri-judul">Galeri Kegiatan</h2>
@@ -196,6 +301,13 @@
       <ul class="foot__list" id="foot-links">
         <li class="foot__item foot__item--pending">Memuat tautan...</li>
       </ul>
+
+      <p class="foot__title foot__title--spaced">Pengaturan Tampilan</p>
+      <label class="check foot__motion">
+        <input type="checkbox" id="motion-toggle">
+        <span>Animasi halaman</span>
+      </label>
+      <p class="foot__hint" id="motion-hint"></p>
     </div>
   </div>
 </footer>
@@ -204,6 +316,13 @@
   <button class="lightbox__close" type="button" id="lightbox-close">Tutup Foto</button>
   <img id="lightbox-img" src="" alt="">
   <p class="lightbox__caption" id="lightbox-caption"></p>
+</dialog>
+
+<dialog class="winner" id="winner-dialog" aria-labelledby="winner-name">
+  <button class="winner__close" type="button" id="winner-close">Tutup</button>
+  <p class="winner__label">Nama yang keluar</p>
+  <p class="winner__name" id="winner-name"></p>
+  <p class="winner__meta" id="winner-meta"></p>
 </dialog>
 
 <noscript>

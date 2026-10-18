@@ -60,6 +60,45 @@ DESIGN.md
 README.md
 ```
 
+## Section Utility
+
+Section Utility ada di bawah Struktur, sebelum Galeri.
+
+**Acak Kelompok** membagi 43 siswa memakai pengacakan Fisher-Yates. Pilih mode
+pembagian lewat "Jumlah Kelompok" atau "Siswa per Kelompok". Seimbangnya
+pembagian dibaca otomatis dari kolom `Kelamin` di `students.csv`: siswa
+berkolom `L` dan siswa berkolom `P` diocok terpisah lalu dibagikan bergilir,
+sehingga tiap kelompok mendapat potongan dari keduanya dan ukurannya tetap
+berbeda paling banyak satu siswa. Halaman tidak pernah menebak jenis kelamin
+dari nama. Kolom `Kelamin` sengaja saya isi kosong semua, jadi halaman
+menyatakan bahwa pengacakan berjalan acak murni sampai kelas mengisinya
+sendiri. Tombol "Salin Teks WA" menyalin hasil akhir dengan format yang bisa
+langsung dikirim ke grup WhatsApp.
+
+**Kalkulator Subnet** menghitung mask, network, broadcast, rentang host, dan
+total host dari satu alamat IPv4 dan prefix /8 sampai /30, memakai operasi
+bitwise tanpa pustaka luar. Kalau alamat yang diketik bukan alamat jaringan
+blok itu, halaman menyatakaninya di bawah hasil, bukan diam-diam menyesuaikannya.
+
+**Spin The Wheel** menggambar roda di atas canvas HTML5. Roda berputar 4 sampai
+6 putaran selama 5,2 detik dengan perlambatan ease-out, tombolnya berubah jadi
+"Memutar..." selama putaran berjalan, dan juring yang menang menyala hijau
+setelah berhenti. Titik mendarat diacak di seluruh roda, bukan di sekitar
+posisi sebelumnya, jadi nama yang keluar tidak bergantung pada putaran
+sebelumnya. Warna juring berselang-seling dua warna yang kontrasnya sudah
+diukur, dan nomor juring selalu dituliskan di dalam roda supaya hasilnya tetap
+terbaca walau nama terlalu panjang untuk muat di dalam juring. Centang
+"Hapus nama terpilih" untuk mengurangi nama yang sudah keluar dari putaran
+berikutnya, dan tombol "Kembalikan Semua Nama" untuk mengulang dari awal.
+Kalau sistem operasi Anda sedang mematikan efek animasi, putaran roda berjalan
+instan dan hasilnya langsung muncul di dialog, karena penghormatan
+`prefers-reduced-motion` memang sengaja dipasang. Untuk melihat rodanya
+berputar, nyalakan lagi "Animation effects" di Pengaturan Windows, di
+Aksesibilitas, Efek Visual.
+
+Bagian ini memakai `students.csv`. Kalau daftar siswa gagal dimuat, ketiga alat
+menampilkan pesan penyebabnya, bukan cramik kosong.
+
 ## Mengubah data
 
 Buka berkasnya di Excel, ubah, simpan sebagai CSV, lalu muat ulang halaman.
@@ -67,7 +106,13 @@ Tidak ada yang perlu diedit di dalam kode.
 
 ### students.csv
 
-Kolom `No. Absen` dan `Nama Lengkap Siswa` sudah cukup. Ada kolom opsional
+Kolom `No. Absen` dan `Nama Lengkap Siswa` sudah cukup. Ada dua kolom opsional:
+
+`Kelamin`: diisi `L` atau `P`, dipakai Acak Kelompok supaya pembagiannya
+seimbang. Kosongkan sebagian pun tetap jalan,sisanya masuk hitungan sebagai
+"belum ditandai". Kalau semua kosong, pengacakan berjalan acak murni dan
+halaman mengatakannya.
+
 `Foto`: kalau kolom ini ada, halaman akan mencari berkas
 `assets/images/students/<nama berkas>` untuk setiap siswa. Foto yang tidak ada
 tidak akan merusak halaman, kartu siswa akan otomatis memakai inisial nama.
@@ -149,6 +194,26 @@ Selama kolom `URL` masih kosong, nama platform tampil sebagai teks biasa
 disertai keterangan "tautan belum diisi", bukan sebagai tautan yang tidak bisa
 ditekan. Baru begitu URL diisi, tautannya aktif dan terbuka di tab baru.
 
+## Animation toggle
+
+At the bottom of the page in the "Pengaturan Tampilan" section there is a
+checkbox **"Animasi halaman"**. It controls two things at once, the smooth scroll
+when switching sections and the rotation of the wheel.
+
+The default follows the computer's own setting. If Windows has animations turned
+off, then "Animation effects" in
+Settings > Accessibility > Visual effects, the page stays still, and that is
+deliberate: some people get dizzy or have a headache from moving screens, and
+the system setting is how they tell the browser.
+
+Turn the checkbox on to get the animations anyway. The choice is stored in the
+browser, so it only needs setting once.
+
+The smooth scroll is done with JavaScript, not CSS `scroll-behavior`, because the
+browser turns off CSS smooth scrolling as well when the system animations are
+off. CSS `scroll-behavior` would then make the checkbox a lie. The smooth
+scrolling lasts about 550 milliseconds.
+
 ## Yang perlu diketahui
 
 - Pindah seksi lewat navbar bergerak halus. Kalau browser atau pengaturan
@@ -165,10 +230,12 @@ ditekan. Baru begitu URL diisi, tautannya aktif dan terbuka di tab baru.
   meminta berkas yang belum ada.
 - Tombol "Kembali ke Atas" di footer mengembalikan fokus keyboard ke bagian atas
   halaman, bukan hanya menggulir layar.
-- Kolom `Foto` di `students.csv` sengaja dibiarkan kosong di berkas asal, dan
-  kolom itu sendiri tidak ada. Tambahkan hanya kalau ada foto yang mau
-  dipakai. Tanpa kolom itu, halaman tidak membuat permintaan gambar yang
-  gagal.
+- Kolom `Kelamin` di `students.csv` sengaja saya isi kosong semua, karena
+  mengisi jenis kelamin 43 orang bukan hak saya. Cukup isi `L` atau `P` kalau
+  pembagian kelompok perlu seimbang, dan halamannya langsung berubah.
+- Kolom `Foto` di `students.csv` juga sengaja dikosongkan dan kolom itu sendiri
+  tidak ada di berkas asal. Tambahkan hanya kalau ada foto yang mau dipakai.
+  Tanpa kolom itu, halaman tidak membuat permintaan gambar yang gagal.
 - Folder `assets/images/logo/` tidak dipakai oleh halaman ini. Nama kelas
   ditulis sebagai teks supaya tetap tajam di layar kecil. Kalau nanti mau
   memakai berkas logo, itu perlu perubahan pada `index.html`.

@@ -48,8 +48,10 @@ body {
   overflow-wrap: break-word;
 }
 
-h1, h2, h3, p, ul, dl, dd, figure { margin: 0; }
-ul { padding: 0; list-style: none; }
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+/* Lists carry no marker unless a rule below asks for one, so a new <ol> can never
+   surprise us with double numbering. */
+ul, ol { padding: 0; list-style: none; }
 img { max-width: 100%; display: block; }
 code {
   font-family: var(--font-mono);
@@ -816,12 +818,15 @@ code {
 .groups__names {
   margin-top: 0.6rem;
   padding-top: 0.55rem;
+  /* Room for the markers, matched to the number column of the wheel list. */
+  padding-left: 1.75rem;
   border-top: 1px solid var(--hairline);
   display: grid;
-  gap: 0.2rem;
-  counter-reset: member;
+  gap: 0.3rem;
+  /* Members stay numbered, the group card itself does not. */
+  list-style: decimal;
 }
-.groups__item { line-height: 1.4; font-size: 0.9rem; }
+.groups__item { line-height: 1.5; font-size: 0.9rem; }
 
 .calc {
   display: grid;

@@ -1108,6 +1108,30 @@
     host.appendChild(list);
   }
 
+  // The mouse wheel changes the number while the field has focus. Waiting for focus
+  // on purpose: adjusting on hover alone would change the group count every time
+  // someone scrolls past the field while reading the page.
+  function wireNumberWheel(input, onChange) {
+    input.addEventListener('wheel', function (event) {
+      if (document.activeElement !== input) return;
+      if (input.disabled || input.readOnly) return;
+
+      var step = parseInt(input.getAttribute('step'), 10) || 1;
+      var min = input.min === '' ? -Infinity : parseInt(input.min, 10);
+      var max = input.max === '' ? Infinity : parseInt(input.max, 10);
+      var current = parseInt(input.value, 10);
+      if (isNaN(current)) current = min === -Infinity ? 0 : min;
+
+      var next = event.deltaY < 0 ? current + step : current - step;
+      next = Math.min(max, Math.max(min, next));
+      if (next === current) return;
+
+      event.preventDefault();
+      input.value = String(next);
+      onChange();
+    }, { passive: false });
+  }
+
   function wireGroupTool(students) {
     var host = document.getElementById('kelompok-hasil');
     var shuffleButton = document.getElementById('kelopedia-acak');
@@ -1172,6 +1196,7 @@
 
     modeInputs.forEach(function (input) { input.addEventListener('change', syncMode); });
     shuffleButton.addEventListener('click', run);
+    wireNumberWheel(valueInput, run);
 
     syncMode();
     run();

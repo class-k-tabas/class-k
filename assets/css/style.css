@@ -35,6 +35,7 @@
 
 html {
   scroll-padding-top: calc(var(--nav-h) + 16px);
+  scroll-behavior: auto;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -792,6 +793,7 @@ code {
 }
 
 .field__input--number { max-width: 8rem; }
+.field__hint { font-size: 0.8rem; color: var(--muted); max-width: 26ch; }
 .field__input--mono { font-family: var(--font-mono); letter-spacing: 0.01em; }
 
 
@@ -1062,9 +1064,13 @@ code {
   .students { grid-template-columns: 1fr; }
 }
 
-/* Smooth section scrolling is done in JavaScript, not with scroll-behavior, because
-   browsers suppress CSS smooth scrolling when the OS has animations turned off. */
+/* Browsers suppress CSS smooth scrolling when the operating system has animations
+   turned off, so the nav glide is done in JavaScript as well. The rule below still
+   matters for scrolls the browser starts on its own, such as focusing an input that
+   sits below the fold. */
+html[data-motion="on"] { scroll-behavior: smooth; }
 
 @media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="on"]) { scroll-behavior: auto; }
   * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }
